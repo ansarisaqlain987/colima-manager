@@ -59,6 +59,7 @@ Include all of these sections (omit heading if there are no entries):
 
 ## Checklist
 
+- [ ] Lint passes (`pnpm lint:check`)
 - [ ] Build passes locally (`pnpm build`)
 ```
 

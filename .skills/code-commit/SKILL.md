@@ -35,6 +35,16 @@ Every commit message must follow this format:
    - Omit entirely for small, self-evident changes.
 3. **Footer**: Use Conventional Commits footer conventions for breaking changes (`BREAKING CHANGE: ...`) and issue references (`Refs #12`, `Closes #34`).
 
+## Pre-commit Hook
+
+This repo uses **husky** + **lint-staged** for auto-linting on staged `.ts`/`.tsx` files in `src/`. The hook:
+
+1. Runs `eslint --fix` and `prettier --write` on staged files (auto-fixes reformatting & fixable issues)
+2. Re-runs `eslint` and `prettier --check` to verify everything passes
+3. **Aborts the commit** if any issues remain
+
+If auto-fix cannot resolve the issues (e.g. real ESLint errors, semantic issues), the commit fails and **does not retry**. **Do not fix the issues yourself** — display the lint errors to the user in a clear, user-friendly message and ask them to fix the issues manually.
+
 ## Workflow
 
 1. Check for uncommitted changes: `git status` and `git diff --staged`

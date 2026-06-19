@@ -22,3 +22,7 @@ Creates or updates a Pull Request targeting `main` using GitHub CLI (`gh`).
 3. Checks for existing PRs on the branch targeting `main` (`gh pr list --head <branch> --base main`).
 4. Creates a new PR if none exists, updates the description if one exists, or presents options if multiple exist.
 5. Returns the PR URL after creation or update.
+
+## Notes
+
+This repo uses **husky** + **lint-staged**. All commits should pass the pre-commit lint hook (`eslint` + `prettier` on staged `.ts`/`.tsx` files). The PR checklist includes `pnpm lint:check` verification.
