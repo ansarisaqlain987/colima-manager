@@ -12,7 +12,7 @@
   "app": {
     "windows": [
       {
-        "title": "colima-manager",
+        "title": "Colima Manager",
         "width": 800,
         "height": 600
       }
