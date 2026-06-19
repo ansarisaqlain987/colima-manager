@@ -1,6 +1,6 @@
-import { useState, useEffect } from "react";
-import { invoke } from "@tauri-apps/api/core";
-import "./App.css";
+import { useState, useEffect } from 'react';
+import { invoke } from '@tauri-apps/api/core';
+import './App.css';
 
 interface ColimaStatus {
   active: boolean;
@@ -14,12 +14,12 @@ function App() {
   const [status, setStatus] = useState<ColimaStatus | null>(null);
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(false);
-  const [activeAction, setActiveAction] = useState<"start" | "stop" | null>(null);
+  const [activeAction, setActiveAction] = useState<'start' | 'stop' | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   const fetchStatus = async () => {
     try {
-      const result = await invoke<ColimaStatus>("get_colima_status");
+      const result = await invoke<ColimaStatus>('get_colima_status');
       setStatus(result);
       setError(null);
     } catch (err) {
@@ -30,10 +30,10 @@ function App() {
   };
 
   useEffect(() => {
-    fetchStatus();
+    void fetchStatus();
   }, []);
 
-  const handleAction = async (action: "start" | "stop") => {
+  const handleAction = async (action: 'start' | 'stop') => {
     setActiveAction(action);
     setActionLoading(true);
     setError(null);
@@ -78,45 +78,41 @@ function App() {
         <div className="status-card">
           <div className="card-header">
             <div className="status-indicator">
-              <span
-                className={`status-dot ${status?.active ? "active" : "inactive"}`}
-              ></span>
-              <span className="status-text">
-                {status?.active ? "Running" : "Stopped"}
-              </span>
+              <span className={`status-dot ${status?.active ? 'active' : 'inactive'}`}></span>
+              <span className="status-text">{status?.active ? 'Running' : 'Stopped'}</span>
             </div>
             <div className="action-buttons">
               {!status?.active && (
                 <button
-                  className={`btn btn-start ${actionLoading && activeAction === "start" ? "btn-loading" : ""}`}
-                  onClick={() => handleAction("start")}
-                  disabled={actionLoading && activeAction === "start"}
-                  aria-busy={actionLoading && activeAction === "start"}
+                  className={`btn btn-start ${actionLoading && activeAction === 'start' ? 'btn-loading' : ''}`}
+                  onClick={() => handleAction('start')}
+                  disabled={actionLoading && activeAction === 'start'}
+                  aria-busy={actionLoading && activeAction === 'start'}
                 >
-                  {actionLoading && activeAction === "start" ? (
+                  {actionLoading && activeAction === 'start' ? (
                     <>
                       <span className="button-spinner"></span>
                       Starting...
                     </>
                   ) : (
-                    "Start"
+                    'Start'
                   )}
                 </button>
               )}
               {status?.active && (
                 <button
-                  className={`btn btn-stop ${actionLoading && activeAction === "stop" ? "btn-loading" : ""}`}
-                  onClick={() => handleAction("stop")}
-                  disabled={actionLoading && activeAction === "stop"}
-                  aria-busy={actionLoading && activeAction === "stop"}
+                  className={`btn btn-stop ${actionLoading && activeAction === 'stop' ? 'btn-loading' : ''}`}
+                  onClick={() => handleAction('stop')}
+                  disabled={actionLoading && activeAction === 'stop'}
+                  aria-busy={actionLoading && activeAction === 'stop'}
                 >
-                  {actionLoading && activeAction === "stop" ? (
+                  {actionLoading && activeAction === 'stop' ? (
                     <>
                       <span className="button-spinner"></span>
                       Stopping...
                     </>
                   ) : (
-                    "Stop"
+                    'Stop'
                   )}
                 </button>
               )}
@@ -133,7 +129,7 @@ function App() {
                   <div className="spec-icon">⚙</div>
                   <div className="spec-content">
                     <span className="spec-label">CPUs</span>
-                    <span className="spec-value">{status.cpu ?? "—"}</span>
+                    <span className="spec-value">{status.cpu ?? '—'}</span>
                   </div>
                 </div>
 
@@ -141,7 +137,7 @@ function App() {
                   <div className="spec-icon">💾</div>
                   <div className="spec-content">
                     <span className="spec-label">Memory</span>
-                    <span className="spec-value">{status.memory ?? "—"}</span>
+                    <span className="spec-value">{status.memory ?? '—'}</span>
                   </div>
                 </div>
 
@@ -149,7 +145,7 @@ function App() {
                   <div className="spec-icon">💿</div>
                   <div className="spec-content">
                     <span className="spec-label">Disk</span>
-                    <span className="spec-value">{status.disk ?? "—"}</span>
+                    <span className="spec-value">{status.disk ?? '—'}</span>
                   </div>
                 </div>
 
@@ -158,9 +154,7 @@ function App() {
                     <div className="spec-icon">🐳</div>
                     <div className="spec-content">
                       <span className="spec-label">Runtime</span>
-                      <span className="spec-value">
-                        {status.container_runtime}
-                      </span>
+                      <span className="spec-value">{status.container_runtime}</span>
                     </div>
                   </div>
                 )}
@@ -178,8 +172,7 @@ function App() {
           {!status?.active && (
             <div className="card-body card-body-empty">
               <p className="empty-text">
-                Colima is currently stopped. Click <strong>Start</strong> to
-                get started.
+                Colima is currently stopped. Click <strong>Start</strong> to get started.
               </p>
             </div>
           )}

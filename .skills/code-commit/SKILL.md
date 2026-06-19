@@ -16,15 +16,15 @@ Every commit message must follow this format:
 
 ### Types
 
-| Type | When to use
-|---|---|
-| `feat` | A new feature
-| `fix` | A bug fix
-| `docs` | Documentation-only changes
-| `style` | Formatting, semicolons, etc. (no code logic change)
-| `refactor` | Code change that neither fixes a bug nor adds a feature
-| `test` | Adding or updating tests
-| `chore` | Build process, dependencies, or auxiliary tooling changes
+| Type       | When to use                                               |
+| ---------- | --------------------------------------------------------- |
+| `feat`     | A new feature                                             |
+| `fix`      | A bug fix                                                 |
+| `docs`     | Documentation-only changes                                |
+| `style`    | Formatting, semicolons, etc. (no code logic change)       |
+| `refactor` | Code change that neither fixes a bug nor adds a feature   |
+| `test`     | Adding or updating tests                                  |
+| `chore`    | Build process, dependencies, or auxiliary tooling changes |
 
 ### Rules
 

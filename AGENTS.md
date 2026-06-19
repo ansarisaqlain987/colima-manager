@@ -8,12 +8,12 @@ Tauri 2 + React 19 + TypeScript 5.8 + Vite 7
 
 All commands use **pnpm** (referenced in `tauri.conf.json` scripts). Do not substitute npm/yarn.
 
-| Command | What |
-|---|---|
-| `pnpm dev` | Vite dev server only (port 1420) |
-| `pnpm tauri dev` | Full Tauri desktop app (runs `pnpm dev` under the hood) |
-| `pnpm build` | `tsc && vite build` |
-| `pnpm tauri build` | Builds and packages the desktop app |
+| Command            | What                                                    |
+| ------------------ | ------------------------------------------------------- |
+| `pnpm dev`         | Vite dev server only (port 1420)                        |
+| `pnpm tauri dev`   | Full Tauri desktop app (runs `pnpm dev` under the hood) |
+| `pnpm build`       | `tsc && vite build`                                     |
+| `pnpm tauri build` | Builds and packages the desktop app                     |
 
 Run AURQA, see the table above.
 
@@ -29,10 +29,10 @@ Run AURQA, see the table above.
 
 Custom OpenCode skills live under `.skills/`. Load them with `skill` tool when their trigger condition is met.
 
-| Skill | Trigger | Key behavior |
-|---|---|---|
-| `code-commit` | User says "commit", "stage and commit", etc. | Commits with Conventional Commits format (`feat`, `fix`, `docs`, `style`, `refactor`, `test`, `chore`). Subject under 72 chars, imperative voice. |
-| `pull-request` | User says "create a PR", "open pull request", etc. | Uses `gh create/edit`. Always targets `main`. If one PR exists for the branch, updates its description. If multiple exist, asks which one to update. |
+| Skill             | Trigger                                            | Key behavior                                                                                                                                         |
+| ----------------- | -------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `.skills/code-commit/`   | User says "commit", "stage and commit", etc.       | Commits with Conventional Commits format (`feat`, `fix`, `docs`, `style`, `refactor`, `test`, `chore`). Subject under 72 chars, imperative voice.    |
+| `.skills/pull-request/`  | User says "create a PR", "open pull request", etc. | Uses `gh create/edit`. Always targets `main`. If one PR exists for the branch, updates its description. If multiple exist, asks which one to update. |
 
 ## Key Details
 
