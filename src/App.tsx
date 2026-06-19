@@ -13,6 +13,8 @@ interface ColimaStatus {
 function App() {
   const [status, setStatus] = useState<ColimaStatus | null>(null);
   const [loading, setLoading] = useState(true);
+  const [actionLoading, setActionLoading] = useState(false);
+  const [activeAction, setActiveAction] = useState<"start" | "stop" | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   const fetchStatus = async () => {
@@ -31,12 +33,19 @@ function App() {
     fetchStatus();
   }, []);
 
-  const handleAction = async (action: string) => {
+  const handleAction = async (action: "start" | "stop") => {
+    setActiveAction(action);
+    setActionLoading(true);
+    setError(null);
+
     try {
       await invoke(`colima_${action}`);
-      await fetchStatus();
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
+    } finally {
+      void fetchStatus();
+      setActionLoading(false);
+      setActiveAction(null);
     }
   };
 
@@ -79,18 +88,36 @@ function App() {
             <div className="action-buttons">
               {!status?.active && (
                 <button
-                  className="btn btn-start"
+                  className={`btn btn-start ${actionLoading && activeAction === "start" ? "btn-loading" : ""}`}
                   onClick={() => handleAction("start")}
+                  disabled={actionLoading && activeAction === "start"}
+                  aria-busy={actionLoading && activeAction === "start"}
                 >
-                  Start
+                  {actionLoading && activeAction === "start" ? (
+                    <>
+                      <span className="button-spinner"></span>
+                      Starting...
+                    </>
+                  ) : (
+                    "Start"
+                  )}
                 </button>
               )}
               {status?.active && (
                 <button
-                  className="btn btn-stop"
+                  className={`btn btn-stop ${actionLoading && activeAction === "stop" ? "btn-loading" : ""}`}
                   onClick={() => handleAction("stop")}
+                  disabled={actionLoading && activeAction === "stop"}
+                  aria-busy={actionLoading && activeAction === "stop"}
                 >
-                  Stop
+                  {actionLoading && activeAction === "stop" ? (
+                    <>
+                      <span className="button-spinner"></span>
+                      Stopping...
+                    </>
+                  ) : (
+                    "Stop"
+                  )}
                 </button>
               )}
               <button className="btn btn-refresh" onClick={fetchStatus}>
