@@ -1,17 +1,20 @@
 {
-  "name": "colima-manager",
+  "name": "colima-ui",
   "private": true,
   "version": "0.1.0",
   "type": "module",
   "scripts": {
+    "dev": "vite",
     "build": "tsc && vite build",
+    "preview": "vite preview",
     "tauri": "tauri",
     "dev:app": "pnpm tauri dev",
     "lint:check": "eslint src/ && prettier --check 'src/**/*.{ts,tsx}'",
     "lint:fix": "eslint src/ --fix && prettier --write 'src/**/*.{ts,tsx}'",
     "lint:rust": "cd src-tauri && cargo clippy --manifest-path Cargo.toml",
     "lint-staged-run": "lint-staged",
-    "prepare": "husky"
+    "prepare": "husky",
+    "build:macos": "pnpm tauri build --bundles dmg"
   },
   "dependencies": {
     "@tauri-apps/api": "^2",

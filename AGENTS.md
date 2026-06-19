@@ -40,4 +40,4 @@ Custom OpenCode skills live under `.skills/`. Load them with `skill` tool when t
 - Vite ignores `src-tauri/**` for file watching (`.tauri dev` only)
 - Tauri dev host can be overridden via `TAURI_DEV_HOST` env var
 - TypeScript: `strict: true`, `noUnusedLocals: true`, `noUnusedParameters: true`
-- The Rust crate name is `colima_manager_lib` (the underscored lib name in Cargo.toml) — it differs from the package name `colima-manager`
+- The Rust crate name is `colima_manager_lib` (the underscored lib name in Cargo.toml) — it differs from the package name `colima-ui`
