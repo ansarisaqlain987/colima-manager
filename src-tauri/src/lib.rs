@@ -31,7 +31,14 @@ async fn get_colima_status() -> Result<ColimaStatus, String> {
         let output = Command::new("colima")
             .args(["status"])
             .output()
-            .map_err(|e| format!("Failed to execute colima: {}", e))?;
+            .map_err(|e| {
+                let msg = format!("Failed to execute colima: {}", e);
+                if e.kind() == std::io::ErrorKind::NotFound {
+                    "Colima is not installed. Please install colima first.".to_string()
+                } else {
+                    msg
+                }
+            })?;
 
         let stdout_output = String::from_utf8_lossy(&output.stdout);
         let stderr_output = String::from_utf8_lossy(&output.stderr);
