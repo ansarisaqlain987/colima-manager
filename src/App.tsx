@@ -1,7 +1,169 @@
+import { useState, useEffect } from "react";
+import { invoke } from "@tauri-apps/api/core";
+import "./App.css";
+
+interface ColimaStatus {
+  active: boolean;
+  container_runtime: string | null;
+  cpu: number | null;
+  memory: string | null;
+  disk: string | null;
+}
+
 function App() {
+  const [status, setStatus] = useState<ColimaStatus | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const fetchStatus = async () => {
+    try {
+      const result = await invoke<ColimaStatus>("get_colima_status");
+      setStatus(result);
+      setError(null);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : String(err));
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchStatus();
+  }, []);
+
+  const handleAction = async (action: string) => {
+    try {
+      await invoke(`colima_${action}`);
+      await fetchStatus();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : String(err));
+    }
+  };
+
+  if (loading) {
+    return (
+      <main className="app">
+        <div className="loading-container">
+          <div className="spinner"></div>
+          <p className="loading-text">Checking Colima status...</p>
+        </div>
+      </main>
+    );
+  }
+
   return (
-    <main>
-      <h1>Colima Manager V1</h1>
+    <main className="app">
+      <div className="dashboard">
+        <header className="header">
+          <h1 className="app-title">Colima Manager</h1>
+          <p className="app-subtitle">Container runtime management for macOS</p>
+        </header>
+
+        {error && (
+          <div className="error-banner">
+            <span className="error-icon">⚠</span>
+            <span>{error}</span>
+          </div>
+        )}
+
+        <div className="status-card">
+          <div className="card-header">
+            <div className="status-indicator">
+              <span
+                className={`status-dot ${status?.active ? "active" : "inactive"}`}
+              ></span>
+              <span className="status-text">
+                {status?.active ? "Running" : "Stopped"}
+              </span>
+            </div>
+            <div className="action-buttons">
+              {!status?.active && (
+                <button
+                  className="btn btn-start"
+                  onClick={() => handleAction("start")}
+                >
+                  Start
+                </button>
+              )}
+              {status?.active && (
+                <button
+                  className="btn btn-stop"
+                  onClick={() => handleAction("stop")}
+                >
+                  Stop
+                </button>
+              )}
+              <button className="btn btn-refresh" onClick={fetchStatus}>
+                ↻
+              </button>
+            </div>
+          </div>
+
+          {status?.active && (
+            <div className="card-body">
+              <div className="specs-grid">
+                <div className="spec-item">
+                  <div className="spec-icon">⚙</div>
+                  <div className="spec-content">
+                    <span className="spec-label">CPUs</span>
+                    <span className="spec-value">{status.cpu ?? "—"}</span>
+                  </div>
+                </div>
+
+                <div className="spec-item">
+                  <div className="spec-icon">💾</div>
+                  <div className="spec-content">
+                    <span className="spec-label">Memory</span>
+                    <span className="spec-value">{status.memory ?? "—"}</span>
+                  </div>
+                </div>
+
+                <div className="spec-item">
+                  <div className="spec-icon">💿</div>
+                  <div className="spec-content">
+                    <span className="spec-label">Disk</span>
+                    <span className="spec-value">{status.disk ?? "—"}</span>
+                  </div>
+                </div>
+
+                {status.container_runtime && (
+                  <div className="spec-item">
+                    <div className="spec-icon">🐳</div>
+                    <div className="spec-content">
+                      <span className="spec-label">Runtime</span>
+                      <span className="spec-value">
+                        {status.container_runtime}
+                      </span>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              <div className="quick-actions">
+                <button className="btn btn-outline" onClick={fetchStatus}>
+                  View Logs
+                </button>
+                <button className="btn btn-outline">SSH Into Colima</button>
+              </div>
+            </div>
+          )}
+
+          {!status?.active && (
+            <div className="card-body card-body-empty">
+              <p className="empty-text">
+                Colima is currently stopped. Click <strong>Start</strong> to
+                get started.
+              </p>
+            </div>
+          )}
+        </div>
+
+        <footer className="footer">
+          <button className="btn-link" onClick={fetchStatus}>
+            Refresh Status
+          </button>
+        </footer>
+      </div>
     </main>
   );
 }
