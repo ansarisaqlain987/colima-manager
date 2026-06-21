@@ -120,6 +120,33 @@ fn run_blocking_command(mut cmd: Command) -> Result<(), String> {
     Ok(())
 }
 
+fn spawn_update_tray_item<R: tauri::Runtime + 'static>(toggle: MenuItem<R>, status_item: MenuItem<R>) {
+    // Spawn an async task to check status and update the menu items
+    tauri::async_runtime::spawn(async move {
+        match get_colima_status().await {
+            Ok(status) => {
+                if status.active {
+                    let _ = toggle.set_text("Stop Colima");
+                    let _ = toggle.set_enabled(true);
+                        let _ = status_item.set_text("Status\t\t\t\t🟢");
+                    let _ = status_item.set_enabled(false);
+                } else {
+                    let _ = toggle.set_text("Start Colima");
+                    let _ = toggle.set_enabled(true);
+                        let _ = status_item.set_text("Status\t\t\t\t🔴");
+                    let _ = status_item.set_enabled(false);
+                }
+            }
+            Err(_) => {
+                let _ = toggle.set_text("Colima not present");
+                let _ = toggle.set_enabled(false);
+                    let _ = status_item.set_text("Status\t\t\t\t⚪️");
+                let _ = status_item.set_enabled(false);
+            }
+        }
+    });
+}
+
 #[tauri::command]
 async fn colima_start(args: Option<serde_json::Value>) -> Result<(), String> {
     let args = args.unwrap_or(serde_json::json!({}));
@@ -195,14 +222,17 @@ pub fn run() {
             window.hide()?;
 
             let open = MenuItem::with_id(app, "open", "Open App", true, None::<&str>)?;
-            let start = MenuItem::with_id(app, "start", "Start Colima", true, None::<&str>)?;
-            let stop = MenuItem::with_id(app, "stop", "Stop Colima", true, None::<&str>)?;
+            // Use a tab between label and emoji so the OS places the emoji in a right-aligned column
+            let status = MenuItem::with_id(app, "status", "Status\t⚪️", false, None::<&str>)?;
+            let toggle = MenuItem::with_id(app, "toggle", "Start Colima", true, None::<&str>)?;
+            let toggle_for_setup = toggle.clone();
+            let status_for_setup = status.clone();
             let separator = PredefinedMenuItem::separator(app)?;
             let quit = MenuItem::with_id(app, "quit", "Quit", true, None::<&str>)?;
 
             let menu = Menu::with_items(
                 app,
-                &[&open, &start, &stop, &separator, &quit],
+                &[&open, &separator, &status, &toggle, &separator, &quit],
             )?;
 
             let quit_flag = should_exit.clone();
@@ -220,15 +250,31 @@ pub fn run() {
                             }
                         }
 
-                        "start" => {
-                            tauri::async_runtime::spawn(async {
-                                let _ = colima_start(None).await;
-                            });
-                        }
+                        "toggle" => {
+                            // Disable the item and show a transient label while working
+                            let _ = toggle.set_enabled(false);
+                            // Decide action based on current status
+                            let toggle_for_task = toggle.clone();
+                            let status_for_task = status.clone();
+                            tauri::async_runtime::spawn(async move {
+                                let toggle = toggle_for_task;
+                                match get_colima_status().await {
+                                    Ok(s) => {
+                                        if s.active {
+                                            let _ = toggle.set_text("Stopping...");
+                                            let _ = colima_stop(None).await;
+                                        } else {
+                                            let _ = toggle.set_text("Starting...");
+                                            let _ = colima_start(None).await;
+                                        }
+                                    }
+                                    Err(_) => {
+                                        // If colima not present, keep it disabled with message
+                                    }
+                                }
 
-                        "stop" => {
-                            tauri::async_runtime::spawn(async {
-                                let _ = colima_stop(None).await;
+                                // Refresh label/state after operation
+                                spawn_update_tray_item(toggle.clone(), status_for_task.clone());
                             });
                         }
 
@@ -243,6 +289,9 @@ pub fn run() {
                 .build(app)?;
 
             app.manage(tray);
+
+            // Initialize the toggle and status label/state on startup
+            spawn_update_tray_item(toggle_for_setup, status_for_setup);
 
             Ok(())
         })
