@@ -1,8 +1,10 @@
 use std::process::Command;
 
 use tauri::{
-    Manager, menu::{Menu, MenuItem, PredefinedMenuItem}, tray::{TrayIconBuilder, TrayIconEvent}
+    Manager, menu::{Menu, MenuItem, PredefinedMenuItem}, tray::{TrayIconBuilder}
 };
+
+use std::sync::{Arc, Mutex};
 
 #[derive(serde::Serialize)]
 pub struct ColimaStatus {
@@ -184,8 +186,11 @@ async fn colima_stop(args: Option<serde_json::Value>) -> Result<(), String> {
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
+    let should_exit = Arc::new(Mutex::new(false));
+    let exit_flag = should_exit.clone();
+
     tauri::Builder::default()
-        .setup(|app| {
+        .setup(move |app| {
             let window = app.get_webview_window("main").unwrap();
             window.hide()?;
 
@@ -200,56 +205,52 @@ pub fn run() {
                 &[&open, &start, &stop, &separator, &quit],
             )?;
 
+            let quit_flag = should_exit.clone();
+
             let tray = TrayIconBuilder::new()
                 .menu(&menu)
                 .icon(app.default_window_icon().unwrap().clone())
-                .on_menu_event(|app, event| {
+                .on_menu_event(move |app, event| {
                     match event.id.as_ref() {
                         "open" => {
                             if let Some(window) = app.get_webview_window("main") {
                                 let _ = window.show();
-                                let _ = window.set_focus();
                                 let _ = window.unminimize();
+                                let _ = window.set_focus();
                             }
                         }
 
                         "start" => {
                             tauri::async_runtime::spawn(async {
-                                if let Err(err) = colima_start(None).await {
-                                    eprintln!("Failed to start Colima: {}", err);
-                                }
+                                let _ = colima_start(None).await;
                             });
                         }
 
                         "stop" => {
                             tauri::async_runtime::spawn(async {
-                                if let Err(err) = colima_stop(None).await {
-                                    eprintln!("Failed to stop Colima: {}", err);
-                                }
+                                let _ = colima_stop(None).await;
                             });
                         }
 
                         "quit" => {
+                            *quit_flag.lock().unwrap() = true;
                             app.exit(0);
                         }
 
                         _ => {}
                     }
                 })
-                .on_tray_icon_event(|tray, event| {
-                    if let TrayIconEvent::Click { .. } = event {
-                        if let Some(window) = tray.app_handle().get_webview_window("main") {
-                            let _ = window.show();
-                            let _ = window.set_focus();
-                        }
-                    }
-                })
                 .build(app)?;
 
-            // Keep tray alive
             app.manage(tray);
 
             Ok(())
+        })
+        .on_window_event(|window, event| {
+            if let tauri::WindowEvent::CloseRequested { api, .. } = event {
+                api.prevent_close();
+                let _ = window.hide();
+            }
         })
         .plugin(tauri_plugin_opener::init())
         .invoke_handler(tauri::generate_handler![
@@ -257,6 +258,13 @@ pub fn run() {
             colima_start,
             colima_stop
         ])
-        .run(tauri::generate_context!())
-        .expect("error while running tauri application");
+        .build(tauri::generate_context!())
+        .expect("error while building tauri application")
+        .run(move |_app_handle, event| {
+            if let tauri::RunEvent::ExitRequested { api, .. } = event {
+                if !*exit_flag.lock().unwrap() {
+                    api.prevent_exit();
+                }
+            }
+        });
 }
