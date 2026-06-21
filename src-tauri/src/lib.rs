@@ -1,5 +1,9 @@
 use std::process::Command;
 
+use tauri::{
+    Manager, menu::{Menu, MenuItem, PredefinedMenuItem}, tray::{TrayIconBuilder, TrayIconEvent}
+};
+
 #[derive(serde::Serialize)]
 pub struct ColimaStatus {
     pub active: bool,
@@ -181,6 +185,72 @@ async fn colima_stop(args: Option<serde_json::Value>) -> Result<(), String> {
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
+        .setup(|app| {
+            let window = app.get_webview_window("main").unwrap();
+            window.hide()?;
+
+            let open = MenuItem::with_id(app, "open", "Open App", true, None::<&str>)?;
+            let start = MenuItem::with_id(app, "start", "Start Colima", true, None::<&str>)?;
+            let stop = MenuItem::with_id(app, "stop", "Stop Colima", true, None::<&str>)?;
+            let separator = PredefinedMenuItem::separator(app)?;
+            let quit = MenuItem::with_id(app, "quit", "Quit", true, None::<&str>)?;
+
+            let menu = Menu::with_items(
+                app,
+                &[&open, &start, &stop, &separator, &quit],
+            )?;
+
+            let tray = TrayIconBuilder::new()
+                .menu(&menu)
+                .icon(app.default_window_icon().unwrap().clone())
+                .on_menu_event(|app, event| {
+                    match event.id.as_ref() {
+                        "open" => {
+                            if let Some(window) = app.get_webview_window("main") {
+                                let _ = window.show();
+                                let _ = window.set_focus();
+                                let _ = window.unminimize();
+                            }
+                        }
+
+                        "start" => {
+                            tauri::async_runtime::spawn(async {
+                                if let Err(err) = colima_start(None).await {
+                                    eprintln!("Failed to start Colima: {}", err);
+                                }
+                            });
+                        }
+
+                        "stop" => {
+                            tauri::async_runtime::spawn(async {
+                                if let Err(err) = colima_stop(None).await {
+                                    eprintln!("Failed to stop Colima: {}", err);
+                                }
+                            });
+                        }
+
+                        "quit" => {
+                            app.exit(0);
+                        }
+
+                        _ => {}
+                    }
+                })
+                .on_tray_icon_event(|tray, event| {
+                    if let TrayIconEvent::Click { .. } = event {
+                        if let Some(window) = tray.app_handle().get_webview_window("main") {
+                            let _ = window.show();
+                            let _ = window.set_focus();
+                        }
+                    }
+                })
+                .build(app)?;
+
+            // Keep tray alive
+            app.manage(tray);
+
+            Ok(())
+        })
         .plugin(tauri_plugin_opener::init())
         .invoke_handler(tauri::generate_handler![
             get_colima_status,
