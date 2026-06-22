@@ -12,7 +12,8 @@ RUN npm install -g pnpm@11.8.0
 WORKDIR /home/nonroot
 
 COPY ./package.json ./pnpm-lock.yaml ./
-RUN pnpm install --frozen-lockfile --allow-scripts
+RUN pnpm approve-builds --all
+RUN pnpm install --frozen-lockfile
 
 COPY . .
 
