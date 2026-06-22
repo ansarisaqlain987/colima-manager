@@ -25,14 +25,15 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 24
-          cache: pnpm
+          node-version: '24.x'
+          cache: 'pnpm'
+          cache-dependency-path: package.json
 
-      - name: Enable Corepack
-        run: corepack enable
-
-      - name: Setup pnpm
-        run: corepack prepare pnpm@9 --activate
+      - name: Enable Corepack and install pnpm
+        run: |
+          corepack enable
+          corepack prepare pnpm@11 --activate
+          pnpm --version
 
       - name: Install Rust toolchain
         uses: dtolnay/rust-toolchain@stable
