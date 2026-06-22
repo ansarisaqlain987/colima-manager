@@ -5,6 +5,5 @@ dist
 .gitignore
 .idea
 .vscode
-pnpm-lock.yaml
 build
 **/target
