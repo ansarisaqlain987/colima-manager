@@ -1,0 +1,82 @@
+name: Tauri CI
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: linux
+            runner: [self-hosted, linux, x64]
+          - os: windows
+            runner: [self-hosted, windows, x64]
+          - os: macos
+            runner: [self-hosted, macOS]
+
+    runs-on: ${{ matrix.runner }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+          run_install: false
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
+
+      - name: Cache Rust dependencies
+        uses: swatinem/rust-cache@v2
+
+      # Linux only (skip if already installed)
+      - name: Install Linux dependencies
+        if: matrix.os == 'linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            libwebkit2gtk-4.1-dev \
+            libappindicator3-dev \
+            librsvg2-dev \
+            patchelf
+
+      - name: Install frontend dependencies
+        run: pnpm install --frozen-lockfile
+
+      # Rust checks
+      - name: Check Rust formatting
+        run: cargo fmt --all --check
+        working-directory: src-tauri
+
+      - name: Run Clippy
+        run: cargo clippy --all-targets --all-features -- -D warnings
+        working-directory: src-tauri
+
+      - name: Check Rust compilation
+        run: cargo check --all-targets --all-features
+        working-directory: src-tauri
+
+      # Frontend build
+      - name: Build frontend
+        run: pnpm build
+
+      # Final Tauri build
+      - name: Build Tauri app
+        run: pnpm tauri build
