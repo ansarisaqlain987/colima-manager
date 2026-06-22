@@ -1,7 +1,9 @@
 use std::process::Command;
 
 use tauri::{
-    Manager, menu::{Menu, MenuItem, PredefinedMenuItem}, tray::{TrayIconBuilder}
+    menu::{Menu, MenuItem, PredefinedMenuItem},
+    tray::TrayIconBuilder,
+    Manager,
 };
 
 use std::sync::{Arc, Mutex};
@@ -120,7 +122,10 @@ fn run_blocking_command(mut cmd: Command) -> Result<(), String> {
     Ok(())
 }
 
-fn spawn_update_tray_item<R: tauri::Runtime + 'static>(toggle: MenuItem<R>, status_item: MenuItem<R>) {
+fn spawn_update_tray_item<R: tauri::Runtime + 'static>(
+    toggle: MenuItem<R>,
+    status_item: MenuItem<R>,
+) {
     // Spawn an async task to check status and update the menu items
     tauri::async_runtime::spawn(async move {
         match get_colima_status().await {
@@ -128,19 +133,19 @@ fn spawn_update_tray_item<R: tauri::Runtime + 'static>(toggle: MenuItem<R>, stat
                 if status.active {
                     let _ = toggle.set_text("Stop Colima");
                     let _ = toggle.set_enabled(true);
-                        let _ = status_item.set_text("Status\t\t\t\t🟢");
+                    let _ = status_item.set_text("Status\t\t\t\t🟢");
                     let _ = status_item.set_enabled(false);
                 } else {
                     let _ = toggle.set_text("Start Colima");
                     let _ = toggle.set_enabled(true);
-                        let _ = status_item.set_text("Status\t\t\t\t🔴");
+                    let _ = status_item.set_text("Status\t\t\t\t🔴");
                     let _ = status_item.set_enabled(false);
                 }
             }
             Err(_) => {
                 let _ = toggle.set_text("Colima not present");
                 let _ = toggle.set_enabled(false);
-                    let _ = status_item.set_text("Status\t\t\t\t⚪️");
+                let _ = status_item.set_text("Status\t\t\t\t⚪️");
                 let _ = status_item.set_enabled(false);
             }
         }
@@ -151,13 +156,22 @@ fn spawn_update_tray_item<R: tauri::Runtime + 'static>(toggle: MenuItem<R>, stat
 async fn colima_start(args: Option<serde_json::Value>) -> Result<(), String> {
     let args = args.unwrap_or(serde_json::json!({}));
 
-    let profile = args.get("profile").and_then(|v| v.as_str()).map(String::from);
+    let profile = args
+        .get("profile")
+        .and_then(|v| v.as_str())
+        .map(String::from);
     let cpu = args.get("cpu").and_then(|v| v.as_u64()).map(|n| n as usize);
     let memory = args.get("memory").and_then(|v| v.as_u64());
     let disk = args.get("disk").and_then(|v| v.as_u64()).map(|n| n as u32);
     let arch = args.get("arch").and_then(|v| v.as_str()).map(String::from);
-    let container_runtime = args.get("container_runtime").and_then(|v| v.as_str()).map(String::from);
-    let mount_type = args.get("mount_type").and_then(|v| v.as_str()).map(String::from);
+    let container_runtime = args
+        .get("container_runtime")
+        .and_then(|v| v.as_str())
+        .map(String::from);
+    let mount_type = args
+        .get("mount_type")
+        .and_then(|v| v.as_str())
+        .map(String::from);
 
     let mut cmd = Command::new("colima");
     cmd.arg("start");
@@ -195,7 +209,10 @@ async fn colima_start(args: Option<serde_json::Value>) -> Result<(), String> {
 async fn colima_stop(args: Option<serde_json::Value>) -> Result<(), String> {
     let args = args.unwrap_or(serde_json::json!({}));
 
-    let profile = args.get("profile").and_then(|v| v.as_str()).map(String::from);
+    let profile = args
+        .get("profile")
+        .and_then(|v| v.as_str())
+        .map(String::from);
 
     let mut cmd = Command::new("colima");
     cmd.arg("stop");
