@@ -22,56 +22,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '24.x'
-
-      - name: Enable Corepack and install pnpm
+      - name: Build Docker image and run lint/build checks inside it
         run: |
-          corepack enable
-          corepack prepare pnpm@11 --activate
-          pnpm --version
-
-      - name: Install Rust toolchain
-        uses: dtolnay/rust-toolchain@stable
-        with:
-          components: rustfmt, clippy
-
-      - name: Cache Rust dependencies
-        uses: swatinem/rust-cache@v2
-
-      - name: Install Linux dependencies
-        if: matrix.os == 'linux'
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y software-properties-common
-          sudo add-apt-repository universe
-          sudo apt-get update
-          sudo apt-get install -y \
-            libglib2.0-dev \
-            libwebkit2gtk-4.0-dev \
-            libappindicator3-dev \
-            librsvg2-dev \
-            patchelf
-
-      - name: Install frontend dependencies
-        run: pnpm install --frozen-lockfile
-
-      - name: Check Rust formatting
-        working-directory: src-tauri
-        run: cargo fmt --all --check
-
-      - name: Run Clippy
-        working-directory: src-tauri
-        run: cargo clippy --all-targets --all-features -- -D warnings
-
-      - name: Check Rust compilation
-        working-directory: src-tauri
-        run: cargo check --all-targets --all-features
-
-      - name: Build frontend
-        run: pnpm build
-
-      - name: Build Tauri app
-        run: pnpm tauri build
+          docker build -t colima-manager-ci .
+          docker run --rm -v "${{ github.workspace }}:/workspace" -w /workspace colima-manager-ci /bin/bash -lc "pnpm install --frozen-lockfile && pnpm lint:check && pnpm build && cd src-tauri && cargo fmt --all --check && cargo clippy --all-targets --all-features -- -D warnings && cargo check --all-targets --all-features"

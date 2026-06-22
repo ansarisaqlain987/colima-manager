@@ -1,0 +1,10 @@
+node_modules
+src-tauri/target
+dist
+.git
+.gitignore
+.idea
+.vscode
+pnpm-lock.yaml
+build
+**/target
