@@ -15,10 +15,6 @@ jobs:
         include:
           - os: linux
             runner: [self-hosted, linux, x64]
-          - os: windows
-            runner: [self-hosted, windows, x64]
-          - os: macos
-            runner: [self-hosted, macOS]
 
     runs-on: ${{ matrix.runner }}
 
@@ -32,11 +28,11 @@ jobs:
           node-version: 24
           cache: pnpm
 
+      - name: Enable Corepack
+        run: corepack enable
+
       - name: Setup pnpm
-        uses: pnpm/action-setup@v4
-        with:
-          version: 9
-          run_install: false
+        run: corepack prepare pnpm@9 --activate
 
       - name: Install Rust toolchain
         uses: dtolnay/rust-toolchain@stable
@@ -46,7 +42,6 @@ jobs:
       - name: Cache Rust dependencies
         uses: swatinem/rust-cache@v2
 
-      # Linux only (skip if already installed)
       - name: Install Linux dependencies
         if: matrix.os == 'linux'
         run: |
@@ -60,23 +55,20 @@ jobs:
       - name: Install frontend dependencies
         run: pnpm install --frozen-lockfile
 
-      # Rust checks
       - name: Check Rust formatting
-        run: cargo fmt --all --check
         working-directory: src-tauri
+        run: cargo fmt --all --check
 
       - name: Run Clippy
-        run: cargo clippy --all-targets --all-features -- -D warnings
         working-directory: src-tauri
+        run: cargo clippy --all-targets --all-features -- -D warnings
 
       - name: Check Rust compilation
-        run: cargo check --all-targets --all-features
         working-directory: src-tauri
+        run: cargo check --all-targets --all-features
 
-      # Frontend build
       - name: Build frontend
         run: pnpm build
 
-      # Final Tauri build
       - name: Build Tauri app
         run: pnpm tauri build
