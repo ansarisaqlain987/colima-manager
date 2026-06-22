@@ -67,7 +67,7 @@ All commands use **pnpm**. Do not substitute npm/yarn.
 - Vite ignores `src-tauri/**` for file watching during `tauri dev`
 - Tauri dev host can be overridden via `TAURI_DEV_HOST` environment variable
 - TypeScript is configured with `strict: true`, `noUnusedLocals: true`, `noUnusedParameters: true`
-- The Rust library crate is named `colima_manager_lib` (differs from the package name `colima-ui`)
+- The Rust library crate is named `colima_manager_lib` (differs from the package name `colima-manager`)
 
 ## Commit & Pull Request Workflow
 
