@@ -13,7 +13,7 @@
     "lint:fix": "eslint src/ --fix && prettier --write 'src/**/*.{ts,tsx}'",
     "lint:rust": "cd src-tauri && cargo clippy --manifest-path Cargo.toml",
     "lint-staged-run": "lint-staged",
-    "prepare": "husky",
+    "husky": "husky",
     "build:macos": "pnpm tauri build --bundles dmg"
   },
   "dependencies": {
