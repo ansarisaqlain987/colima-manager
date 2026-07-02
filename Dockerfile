@@ -11,8 +11,8 @@ RUN npm install -g pnpm@11.8.0
 
 WORKDIR /home/nonroot
 
-COPY ./package.json ./pnpm-lock.yaml ./
-RUN echo "allowed-scripts=esbuild" >> .npmrc && pnpm install --frozen-lockfile
+COPY ./package.json ./pnpm-lock.yaml ./.npmrc ./
+RUN pnpm install --frozen-lockfile
 
 COPY . .
 
