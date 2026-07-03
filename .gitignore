@@ -22,3 +22,12 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+audit/
+
+# Rust build artifacts
+target/
+
+# Environment files
+.env
+.env.*

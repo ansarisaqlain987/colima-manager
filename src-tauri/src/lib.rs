@@ -235,7 +235,7 @@ pub fn run() {
 
     tauri::Builder::default()
         .setup(move |app| {
-            let window = app.get_webview_window("main").unwrap();
+            let window = app.get_webview_window("main").expect("Failed to get main webview window");
             window.hide()?;
 
             let open = MenuItem::with_id(app, "open", "Open App", true, None::<&str>)?;
@@ -256,7 +256,7 @@ pub fn run() {
 
             let tray = TrayIconBuilder::new()
                 .menu(&menu)
-                .icon(app.default_window_icon().unwrap().clone())
+                .icon(app.default_window_icon().expect("Failed to get app default icon").clone())
                 .on_menu_event(move |app, event| {
                     match event.id.as_ref() {
                         "open" => {

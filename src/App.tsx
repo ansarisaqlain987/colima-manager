@@ -162,9 +162,8 @@ function App() {
 
               <div className="quick-actions">
                 <button className="btn btn-outline" onClick={fetchStatus}>
-                  View Logs
+                  Refresh Status
                 </button>
-                <button className="btn btn-outline">SSH Into Colima</button>
               </div>
             </div>
           )}
