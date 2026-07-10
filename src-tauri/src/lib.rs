@@ -1,3 +1,5 @@
+use std::env;
+use std::path::PathBuf;
 use std::process::Command;
 
 use tauri::{
@@ -33,10 +35,72 @@ struct ContainerConfig {
     runtime: Option<String>,
 }
 
+fn resolve_colima_path() -> Result<PathBuf, String> {
+    if let Some(path) = env::var_os("COLIMA_PATH") {
+        let path = PathBuf::from(path);
+        return if path.is_file() {
+            Ok(path)
+        } else {
+            Err(format!(
+                "COLIMA_PATH is set but does not point to a valid executable: {}",
+                path.display()
+            ))
+        };
+    }
+
+    let path_env =
+        env::var_os("PATH").ok_or_else(|| "PATH environment variable is not set.".to_string())?;
+
+    for dir in env::split_paths(&path_env) {
+        let candidate = dir.join("colima");
+        if candidate.is_file() {
+            return Ok(candidate);
+        }
+    }
+
+    Err("Colima executable not found in PATH. Install Colima or set COLIMA_PATH.".to_string())
+}
+
+fn build_colima_command() -> Result<Command, String> {
+    Ok(Command::new(resolve_colima_path()?))
+}
+
+fn sanitize_string_arg(value: Option<String>) -> Option<String> {
+    value
+        .as_deref()
+        .map(str::trim)
+        .filter(|s| !s.is_empty())
+        .map(String::from)
+}
+
+#[derive(Default, serde::Deserialize)]
+struct ColimaStartArgs {
+    #[serde(default)]
+    profile: Option<String>,
+    #[serde(default)]
+    cpu: Option<usize>,
+    #[serde(default)]
+    memory: Option<u64>,
+    #[serde(default)]
+    disk: Option<u32>,
+    #[serde(default)]
+    arch: Option<String>,
+    #[serde(default)]
+    container_runtime: Option<String>,
+    #[serde(default)]
+    mount_type: Option<String>,
+}
+
+#[derive(Default, serde::Deserialize)]
+struct ColimaStopArgs {
+    #[serde(default)]
+    profile: Option<String>,
+}
+
 #[tauri::command]
 async fn get_colima_status() -> Result<ColimaStatus, String> {
     tauri::async_runtime::spawn_blocking(|| {
-        let output = Command::new("colima")
+        let output = build_colima_command()?
             .args(["status"])
             .output()
             .map_err(|e| {
@@ -64,9 +128,12 @@ async fn get_colima_status() -> Result<ColimaStatus, String> {
         let mut disk: Option<String> = None;
 
         if active {
-            let output = Command::new("colima")
-                .args(["show", "--json"])
-                .output()
+            let output = build_colima_command()
+                .and_then(|mut cmd| {
+                    cmd.args(["show", "--json"])
+                        .output()
+                        .map_err(|e| format!("Failed to execute colima show: {}", e))
+                })
                 .ok()
                 .filter(|o| o.status.success());
 
@@ -153,27 +220,18 @@ fn spawn_update_tray_item<R: tauri::Runtime + 'static>(
 }
 
 #[tauri::command]
-async fn colima_start(args: Option<serde_json::Value>) -> Result<(), String> {
-    let args = args.unwrap_or(serde_json::json!({}));
+async fn colima_start(args: Option<ColimaStartArgs>) -> Result<(), String> {
+    let args = args.unwrap_or_default();
 
-    let profile = args
-        .get("profile")
-        .and_then(|v| v.as_str())
-        .map(String::from);
-    let cpu = args.get("cpu").and_then(|v| v.as_u64()).map(|n| n as usize);
-    let memory = args.get("memory").and_then(|v| v.as_u64());
-    let disk = args.get("disk").and_then(|v| v.as_u64()).map(|n| n as u32);
-    let arch = args.get("arch").and_then(|v| v.as_str()).map(String::from);
-    let container_runtime = args
-        .get("container_runtime")
-        .and_then(|v| v.as_str())
-        .map(String::from);
-    let mount_type = args
-        .get("mount_type")
-        .and_then(|v| v.as_str())
-        .map(String::from);
+    let profile = sanitize_string_arg(args.profile);
+    let cpu = args.cpu;
+    let memory = args.memory;
+    let disk = args.disk;
+    let arch = sanitize_string_arg(args.arch);
+    let container_runtime = sanitize_string_arg(args.container_runtime);
+    let mount_type = sanitize_string_arg(args.mount_type);
 
-    let mut cmd = Command::new("colima");
+    let mut cmd = build_colima_command()?;
     cmd.arg("start");
 
     if let Some(profile) = profile {
@@ -206,15 +264,12 @@ async fn colima_start(args: Option<serde_json::Value>) -> Result<(), String> {
 }
 
 #[tauri::command]
-async fn colima_stop(args: Option<serde_json::Value>) -> Result<(), String> {
-    let args = args.unwrap_or(serde_json::json!({}));
+async fn colima_stop(args: Option<ColimaStopArgs>) -> Result<(), String> {
+    let args = args.unwrap_or_default();
 
-    let profile = args
-        .get("profile")
-        .and_then(|v| v.as_str())
-        .map(String::from);
+    let profile = sanitize_string_arg(args.profile);
 
-    let mut cmd = Command::new("colima");
+    let mut cmd = build_colima_command()?;
     cmd.arg("stop");
 
     if let Some(profile) = profile {
@@ -235,10 +290,9 @@ pub fn run() {
 
     tauri::Builder::default()
         .setup(move |app| {
-            let window = app
-                .get_webview_window("main")
-                .expect("Failed to get main webview window");
-            window.hide()?;
+            if let Some(window) = app.get_webview_window("main") {
+                window.hide()?;
+            }
 
             let open = MenuItem::with_id(app, "open", "Open App", true, None::<&str>)?;
             // Use a tab between label and emoji so the OS places the emoji in a right-aligned column
@@ -256,13 +310,14 @@ pub fn run() {
 
             let quit_flag = should_exit.clone();
 
+            let icon = app
+                .default_window_icon()
+                .cloned()
+                .ok_or_else(|| "Failed to get app default icon".to_string())?;
+
             let tray = TrayIconBuilder::new()
                 .menu(&menu)
-                .icon(
-                    app.default_window_icon()
-                        .expect("Failed to get app default icon")
-                        .clone(),
-                )
+                .icon(icon)
                 .on_menu_event(move |app, event| {
                     match event.id.as_ref() {
                         "open" => {
@@ -302,7 +357,9 @@ pub fn run() {
                         }
 
                         "quit" => {
-                            *quit_flag.lock().unwrap() = true;
+                            if let Ok(mut flag) = quit_flag.lock() {
+                                *flag = true;
+                            }
                             app.exit(0);
                         }
 
@@ -324,7 +381,6 @@ pub fn run() {
                 let _ = window.hide();
             }
         })
-        .plugin(tauri_plugin_opener::init())
         .invoke_handler(tauri::generate_handler![
             get_colima_status,
             colima_start,
@@ -334,8 +390,10 @@ pub fn run() {
         .expect("error while building tauri application")
         .run(move |_app_handle, event| {
             if let tauri::RunEvent::ExitRequested { api, .. } = event {
-                if !*exit_flag.lock().unwrap() {
-                    api.prevent_exit();
+                if let Ok(flag) = exit_flag.lock() {
+                    if !*flag {
+                        api.prevent_exit();
+                    }
                 }
             }
         });
