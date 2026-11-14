@@ -1,0 +1,25 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: self-hosted
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Build rust-backend (compiles the API)
+        run: docker build --pull -t colima-manager-backend-ci apps/rust-backend
+
+      - name: Build vite-frontend
+        run: docker build --pull -t colima-manager-frontend-ci apps/vite-frontend
+
+      - name: Lint, format check and build the frontend
+        run: docker run --rm colima-manager-frontend-ci sh -c "pnpm lint && pnpm check && pnpm build"

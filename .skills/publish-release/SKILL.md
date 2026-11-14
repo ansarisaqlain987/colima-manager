@@ -142,7 +142,7 @@ Verify release files exist.
 Example:
 
 ```bash
-ls src-tauri/target/release/bundle/dmg
+ls apps/rust-backend/target/release/bundle/dmg
 ```
 
 ---
@@ -228,7 +228,7 @@ After publishing:
 Typical artifact location:
 
 ```text
-src-tauri/target/release/bundle/dmg/
+apps/rust-backend/target/release/bundle/dmg/
 ```
 
 Typical artifact:
@@ -241,7 +241,7 @@ Default upload:
 
 ```bash
 gh release create v1.2.0 \
-    src-tauri/target/release/bundle/dmg/MyApp_1.2.0_aarch64.dmg \
+    apps/rust-backend/target/release/bundle/dmg/MyApp_1.2.0_aarch64.dmg \
     --draft \
     --generate-notes
 ```
@@ -349,7 +349,7 @@ Create draft:
 
 ```bash
 gh release create v1.2.0 \
-  src-tauri/target/release/bundle/dmg/MyApp_1.2.0_aarch64.dmg \
+  apps/rust-backend/target/release/bundle/dmg/MyApp_1.2.0_aarch64.dmg \
   --draft \
   --generate-notes
 ```

@@ -1,0 +1,30 @@
+name: colima-manager
+
+services:
+  rust-backend:
+    build:
+      context: ./apps/rust-backend
+    image: colima-app-backend:latest
+    environment:
+      BIND_ADDR: 0.0.0.0:8080
+      ALLOWED_ORIGINS: http://localhost:1420,http://127.0.0.1:1420
+      RUST_LOG: info
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    restart: unless-stopped
+
+  vite-frontend:
+    build:
+      context: ./apps/vite-frontend
+    image: colima-app-frontend:latest
+    ports:
+      - "127.0.0.1:1420:1420"
+    environment:
+      BACKEND_URL: http://rust-backend:8080
+    volumes:
+      - ./apps/vite-frontend/src:/app/src
+      - ./apps/vite-frontend/public:/app/public
+      - ./apps/vite-frontend/index.html:/app/index.html
+    depends_on:
+      - rust-backend
+    restart: unless-stopped

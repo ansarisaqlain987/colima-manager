@@ -1,0 +1,17 @@
+[package]
+name = "colima-manager"
+version = "0.1.0"
+description = "Colima Manager backend — HTTP/WebSocket API that manages Docker for the web UI"
+authors = ["Saqlain Ansari"]
+edition = "2021"
+
+[dependencies]
+axum = { version = "0.8", features = ["ws"] }
+futures-util = "0.3"
+portable-pty = "0.9"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+tokio = { version = "1", features = ["full"] }
+tower-http = { version = "0.6", features = ["trace"] }
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }

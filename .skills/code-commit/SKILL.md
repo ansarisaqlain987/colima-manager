@@ -37,7 +37,7 @@ Every commit message must follow this format:
 
 ## Pre-commit Hook
 
-This repo uses **husky** + **lint-staged** for auto-linting on staged `.ts`/`.tsx` files in `src/`. The hook:
+This repo uses **husky** + **lint-staged** for auto-linting on staged `.ts`/`.tsx` files in `apps/vite-frontend/src/`. The hook:
 
 1. Runs `eslint --fix` and `prettier --write` on staged files (auto-fixes reformatting & fixable issues)
 2. Re-runs `eslint` and `prettier --check` to verify everything passes
